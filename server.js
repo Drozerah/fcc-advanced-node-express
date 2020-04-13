@@ -7,6 +7,7 @@ const path        = require('path')
 const favicon     = require('serve-favicon')
 const session     = require('express-session')
 const passport    = require('passport')
+const ObjectID    = require('mongodb').ObjectID
 
 const app = express()
 app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
@@ -22,7 +23,16 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
-
+passport.serializeUser((user, done) => {
+  done(null, user._id)
+})
+passport.deserializeUser((id, done) => {
+  const _id = new ObjectID(id)
+  // db.collection('users').findOne({_id}, (err, user) => {
+  //       done(null, user)
+  // })
+  done(null, null)
+})
 
 // Home page
 app.get('/', async(req, res, next) => {
