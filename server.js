@@ -18,7 +18,8 @@ app.set('view engine', 'pug')
 app.get('/', async(req, res, next) => {
     try {
       const view = await path.join(process.cwd(), '/views/pug/index.pug')
-      res.render(view)
+      const data = { title: 'Hello', message: 'Please login' }
+      res.render(view, data)
     } catch (error) {
       next(error)
     }
