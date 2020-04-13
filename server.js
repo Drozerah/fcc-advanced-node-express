@@ -8,6 +8,7 @@ const favicon     = require('serve-favicon')
 const session     = require('express-session')
 const passport    = require('passport')
 const ObjectID    = require('mongodb').ObjectID
+const mongo       = require('mongodb').MongoClient
 
 const app = express()
 app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
@@ -23,18 +24,28 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
-passport.serializeUser((user, done) => {
-  done(null, user._id)
-})
-passport.deserializeUser((id, done) => {
-  const _id = new ObjectID(id)
-  // db.collection('users').findOne({_id}, (err, user) => {
-  //       done(null, user)
-  // })
-  done(null, null)
+// Connect to DB
+const mongodbOption = { useUnifiedTopology: true }
+
+mongo.connect(process.env.DATABASE, mongodbOption, (err, db) => {
+  if(err) {
+    console.log('Database error: ' + err)
+  } else {
+    console.log('Successful database connection')
+    //serialization and app.listen
+    passport.serializeUser((user, done) => {
+      done(null, user._id)
+    })
+    passport.deserializeUser((id, done) => {
+      const _id = new ObjectID(id)
+      db.collection('users').findOne({_id}, (err, user) => {
+            done(null, user)
+      })
+    })
+  }
 })
 
-// Home page
+// GET Home page
 app.get('/', async(req, res, next) => {
     try {
       const view = await path.join(process.cwd(), '/views/pug/index.pug')
