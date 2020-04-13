@@ -1,10 +1,12 @@
 'use strict'
-
+require('dotenv').config()
 const express     = require('express')
 const bodyParser  = require('body-parser')
 const fccTesting  = require('./freeCodeCamp/fcctesting.js')
 const path        = require('path')
 const favicon     = require('serve-favicon')
+const session     = require('express-session')
+const passport    = require('passport')
 
 const app = express()
 app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
@@ -13,6 +15,14 @@ app.use('/public', express.static(process.cwd() + '/public'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.set('view engine', 'pug')
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: true,
+  saveUninitialized: true,
+}))
+app.use(passport.initialize())
+app.use(passport.session())
+
 
 // Home page
 app.get('/', async(req, res, next) => {
