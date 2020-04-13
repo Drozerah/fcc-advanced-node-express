@@ -3,10 +3,11 @@
 const express     = require('express')
 const bodyParser  = require('body-parser')
 const fccTesting  = require('./freeCodeCamp/fcctesting.js')
-const path = require('path')
+const path        = require('path')
+const favicon     = require('serve-favicon')
 
 const app = express()
-
+app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
 fccTesting(app) //For FCC testing purposes
 app.use('/public', express.static(process.cwd() + '/public'))
 app.use(bodyParser.json())

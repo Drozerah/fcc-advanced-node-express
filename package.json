@@ -16,7 +16,8 @@
 		"express": "^4.17.1",
 		"helmet": "^3.22.0",
 		"mongodb": "^3.5.5",
-		"pug": "^2.0.4"
+		"pug": "^2.0.4",
+		"serve-favicon": "^2.5.0"
 	},
 	"engines": {
 		"node": "^12.13.0"
