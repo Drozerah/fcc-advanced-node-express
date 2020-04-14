@@ -116,6 +116,7 @@ mongo.connect(process.env.DATABASE, mongodbOption, (err, client) => {
       res.redirect('/profile')
     })
 
+    // Check if user is authenticated
     function ensureAuthenticated(req, res, next) {
       if (req.isAuthenticated()) {
         return next()
@@ -124,9 +125,8 @@ mongo.connect(process.env.DATABASE, mongodbOption, (err, client) => {
     }
 
     // GET Profile
-    app.route('/profile')
-      .get(ensureAuthenticated, (req, res) => {
-        res.render(process.cwd() + '/views/pug/profile')
+    app.get('/profile', ensureAuthenticated, (req, res) => {
+        res.render(process.cwd() + '/views/pug/profile', { username: req.user.username })
     })
     
     // 404 - not found
