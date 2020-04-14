@@ -10,10 +10,19 @@ const passport      = require('passport')
 const ObjectID      = require('mongodb').ObjectID
 const mongo         = require('mongodb').MongoClient
 const LocalStrategy = require('passport-local')
+const cors          = require('cors')
 
 const app = express()
-app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
 fccTesting(app) //For FCC testing purposes
+// require https
+app.use((req, res, next) => {
+  if (req.hostname !== 'localhost' && req.get('X-Forwarded-Proto') !== 'https') {
+    return res.redirect(`https://${req.hostname}${req.url}`)
+  }
+  return next()
+})
+app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
+app.use(cors())
 app.use('/public', express.static(process.cwd() + '/public'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -28,12 +37,14 @@ app.use(passport.session())
 // Connect to DB
 const mongodbOption = { useUnifiedTopology: true }
 
-mongo.connect(process.env.DATABASE, mongodbOption)
-  .then(connection => {
+mongo.connect(process.env.DATABASE, mongodbOption, (err, client) => {
+  if (err) {
+    
+    console.log('Database error: ' + err)
+    
+  } else {
     console.log('Successful database connection')
-    return connection.db()
-  })
-  .then(db => {
+    const db =  client.db()
 
     // Serialization
     passport.serializeUser((user, done) => {
@@ -51,33 +62,64 @@ mongo.connect(process.env.DATABASE, mongodbOption)
     // Use passport local strategy
     passport.use(new LocalStrategy((username, password, done) => {
       db.collection('users')
+        // * find user by username in db
         .findOne({ username: username }, (err, user) => {
           console.log('User '+ username +' attempted to log in.')
           if (err) { return done(err) }
           if (!user) { return done(null, false) }
-          if (password !== user.password) { return done(null, false) }
+          // * check for the password to match
+          if (password !== user.password) {
+            console.log('Password don\'t math') // !DEBUG
+            return done(null, false) 
+          }
+          // * user is authenticated
           return done(null, user)
         })
     }))
 
+    // app.use((req, res, next) => {
+    //   const { method, url } = req
+    //   console.log(`[request] ${method} - ${url}`) // !DEBUG
+    //   next()
+    // })
+
     // GET Home page
-    app.get('/', async(req, res, next) => {
-      try {
-        const view = await path.join(process.cwd(), '/views/pug/index.pug')
-        const data = { title: 'Hello', message: 'Please login', showLogin: true }
-        return res.render(view, data)
-      } catch (error) {
-        return next(error)
-      }
+    app.get('/', (req, res, next) => {
+      // try {
+      //   const view = await path.join(process.cwd(), '/views/pug/index.pug')
+      //   const data = { title: 'Hello', message: 'Please login', showLogin: true }
+      //   return res.render(view, data)
+      // } catch (error) {
+      //   return next(error)
+      // }
+      // const view = path.join(process.cwd(), '/views/pug/index.pug')
+      // const data = { title: 'Hello', message: 'Please login', showLogin: true }
+      res.render(
+        path.join(process.cwd(), '/views/pug/index.pug'),
+        { 
+          title: 'Home Page',
+          message: 'Please login',
+          showLogin: true
+        }
+      )
     })
-    
+
     // POST Login page
-    app.post('/login', passport.authenticate('local', { failureRedirect: '/' }), async(req, res, next) => {
-      try {
-        const user = await req.user
-      } catch (error) {
-        return next(error)
-      }
+    app.route('/login').post(passport.authenticate('local', { failureRedirect: '/' }), (req, res) => {
+      // try {
+      //   const user = await req.user
+      //   console.log(user) // !DEBUG
+      //   res.redirect('/profile')
+      // } catch (error) {
+      //   return next(error)
+      // }
+      res.redirect('/profile')
+    })
+
+    // GET Profile
+    app.route('/profile')
+      .get((req, res) => {
+        res.render(process.cwd() + '/views/pug/profile');
     })
     
     // 404 - not found
@@ -87,8 +129,5 @@ mongo.connect(process.env.DATABASE, mongodbOption)
     // Start server
     const PORT = process.env.PORT || 3000
     app.listen(PORT, () => console.log("Listening on port " + PORT))
-
-  })
-  .catch(err => {
-    console.log('Error in connecting to mongoDb: ' + err)
-  })
+  }
+})
