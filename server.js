@@ -116,10 +116,17 @@ mongo.connect(process.env.DATABASE, mongodbOption, (err, client) => {
       res.redirect('/profile')
     })
 
+    function ensureAuthenticated(req, res, next) {
+      if (req.isAuthenticated()) {
+        return next()
+      }
+      res.redirect('/')
+    }
+
     // GET Profile
     app.route('/profile')
-      .get((req, res) => {
-        res.render(process.cwd() + '/views/pug/profile');
+      .get(ensureAuthenticated, (req, res) => {
+        res.render(process.cwd() + '/views/pug/profile')
     })
     
     // 404 - not found
