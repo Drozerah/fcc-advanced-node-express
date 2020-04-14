@@ -126,7 +126,13 @@ mongo.connect(process.env.DATABASE, mongodbOption, (err, client) => {
 
     // GET Profile
     app.get('/profile', ensureAuthenticated, (req, res) => {
-        res.render(process.cwd() + '/views/pug/profile', { username: req.user.username })
+      res.render(process.cwd() + '/views/pug/profile', { username: req.user.username })
+    })
+
+    // GET Logout
+    app.get('/logout', (req, res) => {
+      req.logout()
+      res.redirect('/')
     })
     
     // 404 - not found
