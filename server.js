@@ -1,15 +1,16 @@
 'use strict'
 require('dotenv').config()
-const express = require('express')
-const bodyParser = require('body-parser')
-const fccTesting = require('./freeCodeCamp/fcctesting.js')
-const path = require('path')
-const favicon = require('serve-favicon')
-const session = require('express-session')
-const passport = require('passport')
-const ObjectID = require('mongodb').ObjectID
-const mongo = require('mongodb').MongoClient
-const LocalStrategy = require('passport-local')
+const express          = require('express')
+const bodyParser       = require('body-parser')
+const fccTesting       = require('./freeCodeCamp/fcctesting.js')
+const path             = require('path')
+const favicon          = require('serve-favicon')
+const session          = require('express-session')
+const passport         = require('passport')
+const ObjectID         = require('mongodb').ObjectID
+const mongo            = require('mongodb').MongoClient
+const LocalStrategy    = require('passport-local')
+const bcrypt           = require('bcrypt')
 // const cors          = require('cors')
 
 const app = express()
@@ -69,12 +70,13 @@ mongo.connect(
               if (!user) {
                 return done(null, false)
               }
-              // * check for the password to match
-              if (password !== user.password) {
+              // * bcrypt password comparison
+              if (!bcrypt.compareSync(password, user.password)) {
                 // console.log('Password don\'t math') // !DEBUG
                 return done(null, false)
               }
               // * user is authenticated
+              // console.log('user is found') // !DEBUG
               return done(null, user)
             })
         })
@@ -133,9 +135,11 @@ mongo.connect(
                 // if user is undefined and no error occurs then 'insertOne' into the database
                 // with the username and password and as long as no errors occur then call next to go to step 2
                 // console.log('[insert new user in db]') // !DEBUG
+                // hash password with bcrypt
+                const hash = bcrypt.hashSync(req.body.password, 12)
                 db.collection("users").insertOne({
                     username: req.body.username,
-                    password: req.body.password
+                    password: hash
                   },
                   (err, doc) => {
                     if (err) {
